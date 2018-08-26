@@ -38,6 +38,7 @@ hash(pbkdf2, {Salt, Password, Macfun, Iterations, Dklen}) ->
             <<>>
     end;
 hash(bcrypt, {Salt, Password}) ->
+    {ok, _} = application:ensure_all_started(bcrypt),
     case bcrypt:hashpw(Password, Salt) of
         {ok, HashPasswd} ->
             list_to_binary(HashPasswd);
