@@ -10,3 +10,4 @@ rel/example_project
 .rebar
 .erlang.mk/
 emqx_passwd.d
+logs/
