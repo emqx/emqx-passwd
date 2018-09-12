@@ -2,10 +2,9 @@ PROJECT = emqx_passwd
 PROJECT_DESCRIPTION = Password Hash Library for EMQ X Broker
 PROJECT_VERSION = 0.1
 
-DEPS = pbkdf2 bcrypt
+DEPS = pbkdf2
 
 dep_pbkdf2 = git https://github.com/emqx/erlang-pbkdf2 2.0.2
-dep_bcrypt = git https://github.com/emqx/erlang-bcrypt 0.5.2
 
 LOCAL_DEPS = ssl
 
