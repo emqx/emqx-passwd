@@ -22,12 +22,15 @@
 
 -spec(check_pass(binary() | tuple(), binary() | tuple()) -> binary()).
 check_pass({PassHash, Password}, bcrypt) ->
-	case binary:part(PassHash, {0,29}) of		
-		{error, Error}->
+    try binary:part(PassHash, {0,29}) of	
+        {error, Error}->
             error_logger:error_msg("bcrypt hash error:~p", [Error]),
             <<>>;
-		Salt ->
-			check_pass(PassHash, emqx_passwd:hash(bcrypt, {Salt, Password}))
+        Salt ->
+            check_pass(PassHash, emqx_passwd:hash(bcrypt, {Salt, Password}))
+    catch
+        error:badarg -> error_logger:error_msg("bcrypt hash error:incorrect hash"),
+        <<>>
     end;
 check_pass({PassHash, Password}, HashType) ->
     check_pass(PassHash, emqx_passwd:hash(HashType, Password));
