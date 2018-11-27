@@ -12,7 +12,7 @@ LOCAL_DEPS = ssl
 ERLC_OPTS += +debug_info
 ERLC_OPTS += +warnings_as_errors +warn_export_all +warn_unused_import
 
-CT_SUITES = emqx_passwd
+COVER = true
 
 define dep_fetch_git-emqx
 	git clone -q --depth 1 -b $(call dep_commit,$(1)) -- $(call dep_repo,$(1)) $(DEPS_DIR)/$(call dep_name,$(1)) > /dev/null 2>&1; \
@@ -20,3 +20,44 @@ define dep_fetch_git-emqx
 endef
 
 include erlang.mk
+
+distclean::
+	@rm -rf _build cover deps logs log data
+	@rm -f rebar.lock compile_commands.json cuttlefish
+
+rebar-deps:
+	rebar3 get-deps
+
+rebar-clean:
+	@rebar3 clean
+
+rebar-compile: rebar-deps
+	rebar3 compile
+
+rebar-ct:
+	rebar3 ct
+
+rebar-xref:
+	@rebar3 xref
+
+## Below are for version consistency check during erlang.mk and rebar3 dual mode support
+none=
+space = $(none) $(none)
+comma = ,
+quote = \"
+curly_l = "{"
+curly_r = "}"
+dep-versions = [$(foreach dep,$(DEPS) $(BUILD_DEPS),$(curly_l)$(dep),$(quote)$(word 3,$(dep_$(dep)))$(quote)$(curly_r)$(comma))[]]
+
+.PHONY: dep-vsn-check
+dep-vsn-check:
+	$(verbose) erl -noshell -eval \
+		"MkVsns = lists:sort(lists:flatten($(dep-versions))), \
+		{ok, Conf} = file:consult('rebar.config'), \
+		{_, Deps} = lists:keyfind(deps, 1, Conf), \
+		F = fun({N, V}) when is_list(V) -> {N, V}; ({N, {git, _, {branch, V}}}) -> {N, V} end, \
+		RebarVsns = lists:sort(lists:map(F, Deps)), \
+		case {RebarVsns -- MkVsns, MkVsns -- RebarVsns} of \
+		  {[], []} -> halt(0); \
+		  {Rebar, Mk} -> erlang:error({deps_version_discrepancy, [{rebar, Rebar}, {mk, Mk}]}) \
+		end."
