@@ -11,3 +11,5 @@ rel/example_project
 .erlang.mk/
 emqx_passwd.d
 logs/
+_build/
+rebar.lock
