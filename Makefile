@@ -1,38 +1,25 @@
-PROJECT = emqx_passwd
-PROJECT_DESCRIPTION = Password Hash Library for EMQ X Broker
-PROJECT_VERSION = 0.1
+## shallow clone for speed
 
-DEPS = pbkdf2 bcrypt
+REBAR_GIT_CLONE_OPTIONS += --depth 1
+export REBAR_GIT_CLONE_OPTIONS
 
-dep_pbkdf2 = git-emqx https://github.com/emqx/erlang-pbkdf2 2.0.2
-dep_bcrypt = git-emqx https://github.com/emqx/erlang-bcrypt 0.5.3
+REBAR = rebar3
+all: compile
 
-LOCAL_DEPS = ssl
+compile:
+	$(REBAR) compile
 
-ERLC_OPTS += +debug_info
-ERLC_OPTS += +warnings_as_errors +warn_export_all +warn_unused_import
+clean: distclean
 
-COVER = true
+ct: compile
+	$(REBAR) as test ct
 
-$(shell [ -f erlang.mk ] || curl -s -o erlang.mk https://raw.githubusercontent.com/emqx/erlmk/master/erlang.mk)
+eunit: compile
+	$(REBAR) as test eunit
 
-include erlang.mk
+xref:
+	$(REBAR) xref
 
-distclean::
-	@rm -rf _build cover deps logs log data
-	@rm -f rebar.lock compile_commands.json cuttlefish
-
-rebar-deps:
-	rebar3 get-deps
-
-rebar-clean:
-	@rebar3 clean
-
-rebar-compile: rebar-deps
-	rebar3 compile
-
-rebar-ct:
-	rebar3 ct
-
-rebar-xref:
-	@rebar3 xref
+distclean:
+	@rm -rf _build
+	@rm -f data/app.*.config data/vm.*.args rebar.lock

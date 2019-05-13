@@ -17,8 +17,8 @@ DEPS = case lists:keyfind(deps, 1, CONFIG1) of
 BCrypt = {bcrypt, {git, "https://github.com/emqx/erlang-bcrypt.git", {branch, "0.5.3"}}},
 
 NewDeps = case os:type() of
-              {win32, nt} -> [BCrypt | DEPS];
-              _ -> DEPS
+              {win32, nt} -> DEPS;
+              _ -> [BCrypt | DEPS]
           end,
 
 CONFIG2 = lists:keystore(deps, 1, CONFIG1, {deps, NewDeps}),
