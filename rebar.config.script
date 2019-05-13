@@ -1,0 +1,26 @@
+%%-*- mode: erlang -*-
+CONFIG1 = case os:getenv("TRAVIS") of
+              "true" ->
+                  JobId = os:getenv("TRAVIS_JOB_ID"),
+                  [{coveralls_service_job_id, JobId},
+                   {coveralls_coverdata, "_build/test/cover/*.coverdata"},
+                   {coveralls_service_name , "travis-ci"} | CONFIG];
+              _ ->
+                  CONFIG
+          end,
+
+DEPS = case lists:keyfind(deps, 1, CONFIG1) of
+           {_, Deps} -> Deps;
+           _ -> []
+       end,
+
+BCrypt = {bcrypt, {git, "https://github.com/emqx/erlang-bcrypt.git", {branch, "0.5.3"}}},
+
+NewDeps = case os:type() of
+              {win32, nt} -> [BCrypt | DEPS];
+              _ -> DEPS
+          end,
+
+CONFIG2 = lists:keystore(deps, 1, CONFIG1, {deps, NewDeps}),
+
+CONFIG2.
