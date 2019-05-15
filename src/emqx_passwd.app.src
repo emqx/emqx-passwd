@@ -3,6 +3,6 @@
 	{vsn, "0.1"},
 	{modules, ['emqx_passwd']},
 	{registered, []},
-	{applications, [kernel,stdlib,ssl,pbkdf2]},
+	{applications, [kernel,stdlib,ssl,pbkdf2,bcrypt]},
 	{env, []}
 ]}.

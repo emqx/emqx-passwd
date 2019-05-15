@@ -1,0 +1,13 @@
+#!/usr/bin/env escript
+%% -*- erlang -*-
+
+main(_Args) ->
+    FilePath = filename:join(["src", "emqx_passwd.app.src"]),
+    {ok, [AppSrc]} = file:consult(FilePath),
+    {application, emqx_passwd, PropLists0} = AppSrc,
+    Applications0 = proplists:get_value(applications, PropLists0),
+    Applications = Applications0 -- [bcrypt],
+    PropLists1 = proplists:delete(applications, PropLists0),
+    PropLists = [{applications, Applications} | PropLists1],
+    NewAppSrc = {application, emqx_passwd, PropLists},
+    ok = file:write_file(FilePath, [io_lib:format("~p.\n", [NewAppSrc])]).
