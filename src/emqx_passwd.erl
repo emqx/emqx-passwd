@@ -1,4 +1,5 @@
-%% Copyright (c) 2018 EMQ Technologies Co., Ltd. All Rights Reserved.
+%%--------------------------------------------------------------------
+%% Copyright (c) 2019 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -11,14 +12,42 @@
 %% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
+%%--------------------------------------------------------------------
 
 -module(emqx_passwd).
 
--export([hash/2]).
+-export([hash/2, check_pass/2]).
 
 -type(hash_type() :: plain | md5 | sha | sha256 | pbkdf2 | bcrypt).
 
 -export_type([hash_type/0]).
+
+-spec(check_pass(binary() | tuple(), binary() | tuple()) -> binary()).
+check_pass({PassHash, Password}, bcrypt) ->
+    try binary:part(PassHash, {0, 29}) of
+        {error, Error} ->
+            error_logger:error_msg("bcrypt hash error:~p", [Error]),
+            <<>>;
+        Salt ->
+            check_pass(PassHash, emqx_passwd:hash(bcrypt, {Salt, Password}))
+    catch
+        error:badarg -> error_logger:error_msg("bcrypt hash error:incorrect hash"),
+        <<>>
+    end;
+check_pass({PassHash, Password}, HashType) ->
+    check_pass(PassHash, emqx_passwd:hash(HashType, Password));
+check_pass({PassHash, Salt, Password}, {pbkdf2, Macfun, Iterations, Dklen}) ->
+    check_pass(PassHash, emqx_passwd:hash(pbkdf2, {Salt, Password, Macfun, Iterations, Dklen}));
+check_pass({PassHash, Salt, Password}, {salt, bcrypt}) ->
+    check_pass(PassHash, emqx_passwd:hash(bcrypt, {Salt, Password}));
+check_pass({PassHash, Salt, Password}, {bcrypt, salt}) ->
+    check_pass(PassHash, emqx_passwd:hash(bcrypt, {Salt, Password}));
+check_pass({PassHash, Salt, Password}, {salt, HashType}) ->
+    check_pass(PassHash, emqx_passwd:hash(HashType, <<Salt/binary, Password/binary>>));
+check_pass({PassHash, Salt, Password}, {HashType, salt}) ->
+    check_pass(PassHash, emqx_passwd:hash(HashType, <<Password/binary, Salt/binary>>));
+check_pass(PassHash, PassHash) -> ok;
+check_pass(_Hash1, _Hash2)     -> {error, password_error}.
 
 -spec(hash(hash_type(), binary() | tuple()) -> binary()).
 hash(plain, Password)  ->
@@ -38,6 +67,7 @@ hash(pbkdf2, {Salt, Password, Macfun, Iterations, Dklen}) ->
             <<>>
     end;
 hash(bcrypt, {Salt, Password}) ->
+    {ok, _} = application:ensure_all_started(bcrypt),
     case bcrypt:hashpw(Password, Salt) of
         {ok, HashPasswd} ->
             list_to_binary(HashPasswd);
