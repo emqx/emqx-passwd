@@ -58,6 +58,8 @@ hash(sha, Password)  ->
     hexstring(crypto:hash(sha, Password));
 hash(sha256, Password)  ->
     hexstring(crypto:hash(sha256, Password));
+hash(sha512, Password)  ->
+    hexstring(crypto:hash(sha512, Password));
 hash(pbkdf2, {Salt, Password, Macfun, Iterations, Dklen}) ->
     case pbkdf2:pbkdf2(Macfun, Password, Salt, Iterations, Dklen) of
         {ok, Hexstring} ->
@@ -81,5 +83,7 @@ hexstring(<<X:128/big-unsigned-integer>>) ->
 hexstring(<<X:160/big-unsigned-integer>>) ->
     iolist_to_binary(io_lib:format("~40.16.0b", [X]));
 hexstring(<<X:256/big-unsigned-integer>>) ->
-    iolist_to_binary(io_lib:format("~64.16.0b", [X])).
+    iolist_to_binary(io_lib:format("~64.16.0b", [X]));
+hexstring(<<X:512/big-unsigned-integer>>) ->
+    iolist_to_binary(io_lib:format("~128.16.0b", [X])).
 
