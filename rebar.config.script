@@ -16,11 +16,10 @@ DEPS = case lists:keyfind(deps, 1, CONFIG1) of
 
 BCrypt = {bcrypt, {git, "https://github.com/emqx/erlang-bcrypt.git", {branch, "0.5.3"}}},
 
-NewDeps = case os:type() of
-              {win32, nt} -> DEPS;
-              _ -> [BCrypt | DEPS]
-          end,
+NewDeps = case os:type() =:= {win32, nt} orelse os:getenv("EMQX_DESC") =:= "EMQ X Edge" of
+    true  -> DEPS;
+    false ->
+            [BCrypt | DEPS]
+    end,
 
-CONFIG2 = lists:keystore(deps, 1, CONFIG1, {deps, NewDeps}),
-
-CONFIG2.
+lists:keystore(deps, 1, CONFIG1, {deps, NewDeps}).
