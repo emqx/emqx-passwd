@@ -8,7 +8,10 @@ all: compile
 compile:
 	$(REBAR) compile
 
-clean: distclean
+clean:
+	$(REBAR) clean
+	@rm -rf _build/default/lib/*/ebin
+	@rm -rf _build/default/lib/*/priv/*.so
 
 ct: compile
 	$(REBAR) as test ct
