@@ -16,3 +16,4 @@ rebar.lock
 erlang.mk
 rebar3.crashdump
 .erlang.mk/
+.rebar3/
