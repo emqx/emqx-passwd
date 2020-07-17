@@ -16,23 +16,26 @@
 
 -module(emqx_passwd).
 
--export([hash/2, check_pass/2]).
+-export([ hash/2
+        , check_pass/2
+        ]).
 
 -type(hash_type() :: plain | md5 | sha | sha256 | pbkdf2 | bcrypt).
 
 -export_type([hash_type/0]).
 
--spec(check_pass(binary() | tuple(), binary() | tuple()) -> binary()).
+%%--------------------------------------------------------------------
+%% APIs
+%%--------------------------------------------------------------------
+
+-spec(check_pass(binary() | tuple(), binary() | tuple())
+      -> ok | {error, term()}).
 check_pass({PassHash, Password}, bcrypt) ->
-    try binary:part(PassHash, {0, 29}) of
-        {error, Error} ->
-            error_logger:error_msg("bcrypt hash error:~p", [Error]),
-            <<>>;
-        Salt ->
-            check_pass(PassHash, emqx_passwd:hash(bcrypt, {Salt, Password}))
+    try
+        Salt = binary:part(PassHash, {0, 29}),
+        check_pass(PassHash, emqx_passwd:hash(bcrypt, {Salt, Password}))
     catch
-        error:badarg -> error_logger:error_msg("bcrypt hash error:incorrect hash"),
-        <<>>
+        error:badarg -> {error, incorrect_hash}
     end;
 check_pass({PassHash, Password}, HashType) ->
     check_pass(PassHash, emqx_passwd:hash(HashType, Password));
@@ -77,6 +80,10 @@ hash(bcrypt, {Salt, Password}) ->
             error_logger:error_msg("bcrypt hash error:~p", [Error]),
             <<>>
     end.
+
+%%--------------------------------------------------------------------
+%% Internal funcs
+%%--------------------------------------------------------------------
 
 hexstring(<<X:128/big-unsigned-integer>>) ->
     iolist_to_binary(io_lib:format("~32.16.0b", [X]));
